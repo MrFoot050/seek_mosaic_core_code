@@ -8,16 +8,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Data Points
-blackbody_temp = [20, 22.5, 25, 27.5, 30]
-avg_temp_all_images = [20.3407, 23.3113, 25.7162, 28.2587, 30.618]
-temporal_noise_center_pixel = [0.0051, 0.0046, 0.0053, 0.0046, 0.0057]
-temporal_noise_whole_image = [0.0053, 0.0053, 0.0056, 0.0049, 0.0063]
-average_standard_deviation = [0.5682, 0.5921, 0.5987, 0.5557, 0.456]
+blackbody_temp = []
+avg_temp_all_images = []
+temporal_noise_center_pixel = []
+temporal_noise_whole_image = []
+average_standard_deviation = []
 
-#Create polynomial for avergae temp
-coefficients_avg_temp = np.polyfit(BB_Temp_Cycle_1, Avg_temp_all_images, 1)
-polynomial = np.poly1d(cycle_1_coefficients_avg_temp)
-print('1D polynomial for Avg Temp vs BB Temp:', cycle_1_polynomial)
+# Create polynomial for average temp
+coefficients_avg_temp = np.polyfit(blackbody_temp, avg_temp_all_images, 1)
+polynomial = np.poly1d(coefficients_avg_temp)
+print('1D polynomial for Avg Temp vs BB Temp:', polynomial)
 
 # Plot dataset and polynomial for average temp
 plt.figure()
@@ -37,7 +37,7 @@ plt.show()
 
 
 #------------------------------------------------------------------------------------------------------------------------
-#Create polynomial for temporal noise of center pixel
+# Create polynomial for temporal noise of center pixel
 coefficients_temeporal_noise_center_pixel = np.polyfit(blackbody_temp, temporal_noise_center_pixel, 1)
 polynomial_temporal_noise_center_pixel = np.poly1d(coefficients_temeporal_noise_center_pixel)
 print('1D polynomial for Avg Temporal Noise of Center Pixel vs BB Temp:', polynomial_temporal_noise_center_pixel)
@@ -53,7 +53,7 @@ plt.show()
 
 
 #------------------------------------------------------------------------------------------------------------------------
-#Create polynomial for temporal noise of center pixel
+# Create polynomial for temporal noise of center pixel
 coefficients_temporal_noise_whole_image = np.polyfit(blackbody_temp, temporal_noise_whole_image, 1)
 polynomial_temporal_noise_whole_image = np.poly1d(coefficients_temporal_noise_whole_image)
 print('1D polynomial for Avg Temporal Noise of Whole Image vs BB Temp:', polynomial_temporal_noise_whole_image)
