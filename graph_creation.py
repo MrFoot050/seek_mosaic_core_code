@@ -4,6 +4,9 @@ Average Temp vs BB Temp, Average Temporal Noise of Center Pixel vs BB Temp, and 
 of Whole Image vs BB Temp. 
 '''
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 # Data Points
 blackbody_temp = [20, 22.5, 25, 27.5, 30]
 avg_temp_all_images = [20.3407, 23.3113, 25.7162, 28.2587, 30.618]
