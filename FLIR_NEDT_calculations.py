@@ -12,74 +12,101 @@ from astropy.io import fits
 import glob
 
 # SETTINGS
-# Input Require File Paths
-folder_20 = 'E:/CYCLE_1_DATA_fits_gz/2026-04-03_14-15-49/E05257AC071D/converted_fits'   # 64 frames
-folder_25 = 'E:/CYCLE_1_DATA_fits_gz/2026-04-03_14-21-10/E05257AC071D/converted_fits'   # 128 frames
-folder_30 = 'E:/CYCLE_1_DATA_fits_gz/2026-04-03_14-24-30/E05257AC071D/converted_fits'   # 64 frames
-
-# Optional: counts → temperature conversion (set to 1 if unknown)
-calibration_factor = 1.0  # counts per °C
+folder_20 = 'E:/CYCLE_4_DATA_fits_gz/2026-04-03_16-35-58/E05257AC071D/converted_fits'
+folder_25 = 'E:/CYCLE_4_DATA_fits_gz/2026-04-03_16-41-56/E05257AC071D/converted_fits'
+folder_30 = 'E:/CYCLE_4_DATA_fits_gz/2026-04-03_16-46-41/E05257AC071D/converted_fits'
 
 # LOAD FUNCTION
 def load_frames(folder):
     files = sorted(glob.glob(folder + '/*.fits'))
     frames = []
+
     for f in files:
         with fits.open(f) as hdul:
             frames.append(hdul[0].data.astype(float))
+
     return np.array(frames)
 
+# LOAD DATASETS
 frames_20 = load_frames(folder_20)
 frames_25 = load_frames(folder_25)
 frames_30 = load_frames(folder_30)
 
-# BASIC INFO
+# APPLY BLACKBODY CALIBRATION
+# T_corrected = 0.9684*T_measured + 2.252
+
+frames_20 = 0.9684 * frames_20 + 2.252
+frames_25 = 0.9684 * frames_25 + 2.252
+frames_30 = 0.9684 * frames_30 + 2.252
+
+# IMAGE INFO
 height, width = frames_25.shape[1:]
 center_row, center_col = height // 2, width // 2
 
+print(f'Center pixel: ({center_col},{center_row})')
+
 # MEAN TEMPERATURE
+
 mean_20 = np.mean(frames_20, axis = 0)
 mean_25 = np.mean(frames_25, axis = 0)
 mean_30 = np.mean(frames_30, axis = 0)
 
-# Convert to temperature if calibration known
-mean_temp_20 = mean_20 / calibration_factor
-mean_temp_25 = mean_25 / calibration_factor
-mean_temp_30 = mean_30 / calibration_factor
+mean_temp_center_20 = mean_20[center_row, center_col]
+mean_temp_center_25 = mean_25[center_row, center_col]
+mean_temp_center_30 = mean_30[center_row, center_col]
 
-mean_temp_center_20 = mean_temp_20[center_row, center_col]
-mean_temp_center_25 = mean_temp_25[center_row, center_col]
-mean_temp_center_30 = mean_temp_30[center_row, center_col]
+print('\nCENTER PIXEL MEAN TEMPERATURES (°C)')
+print(f'20°C dataset: {mean_temp_center_20:.6f}')
+print(f'25°C dataset: {mean_temp_center_25:.6f}')
+print(f'30°C dataset: {mean_temp_center_30:.6f}')
 
-print('Center pixel mean temp (20C dataset):', mean_temp_center_20)
-print('Center pixel mean temp (25C dataset):', mean_temp_center_25)
-print('Center pixel mean temp (30C dataset):', mean_temp_center_30)
+# STANDARD DEVIATION
 
-# TEMPORAL NOISE (Rashman et al.)
-# FLIR uses std dev at the middle temperature (25C)
-sigma_counts = np.std(frames_25, axis = 0)
+std_image = np.std(frames_25, axis=0)
 
-sigma_center = sigma_counts[center_row, center_col]
+std_center = std_image[center_row, center_col]
 
-print('Center pixel temporal noise σ (counts):', sigma_center)
-print('Mean σ across image:', np.mean(sigma_counts))
+print('\nSTANDARD DEVIATION (°C)')
+print(f'Center pixel std: {std_center:.6f}')
+print(f'Mean image std: {np.mean(std_image):.6f}')
+
+# TEMPORAL NOISE (RASHMAN ET AL. 2018)
+# σ = std[(frame(i+1)-frame(i))/sqrt(2)]
+
+diff = (frames_25[1:] - frames_25[:-1]) / np.sqrt(2)
+
+temporal_noise_image = np.std(diff, axis = 0)
+
+temporal_noise_center = temporal_noise_image[center_row, center_col]
+temporal_noise_whole = np.mean(temporal_noise_image)
+
+print('\nTEMPORAL NOISE (RASHMAN METHOD) (°C)')
+print(f'Center pixel temporal noise: {temporal_noise_center:.6f}')
+print(f'Mean temporal noise image: {temporal_noise_whole:.6f}')
 
 # RESPONSIVITY
-# R = (response_30 - response_20) / delta_T
-delta_T = 10.0  # 30C - 20C
+# R = (response30 - response20)/ΔT
+
+delta_T = 10.0
+
 responsivity = (mean_30 - mean_20) / delta_T
 
 responsivity_center = responsivity[center_row, center_col]
+responsivity_whole = np.mean(responsivity)
 
-print('Center pixel responsivity (counts/°C):', responsivity_center)
+print('\nRESPONSIVITY')
+print(f'Center pixel responsivity: {responsivity_center:.6f}')
+print(f'Mean image responsivity: {responsivity_whole:.6f}')
 
 # NEDT
-nedt_image = sigma_counts / responsivity   # in °C (or K)
+# NEDT = temporal noise / responsivity
+
+nedt_image = temporal_noise_image / responsivity
 
 nedt_center = nedt_image[center_row, center_col]
+nedt_whole = np.mean(nedt_image)
 
-print('Center pixel NEDT (°C):', nedt_center)
-print('Mean NEDT over image (°C):', np.mean(nedt_image))
-
-# Convert to mK if desired
-print('Mean NEDT (mK):', np.mean(nedt_image) * 1000)
+print('\nNEDT')
+print(f'Center pixel NEDT: {nedt_center:.6f} °C')
+print(f'Mean image NEDT: {nedt_whole:.6f} °C')
+print(f'Mean image NEDT: {nedt_whole * 1000:.2f} mK')
