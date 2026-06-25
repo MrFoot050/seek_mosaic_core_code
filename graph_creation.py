@@ -15,12 +15,15 @@ temporal_noise_whole_image = []
 average_standard_deviation = []
 
 # Create polynomial for average temp
-coefficients_avg_temp = np.polyfit(blackbody_temp, avg_temp_all_images, 1)
+coefficients_avg_temp = np.polyfit(avg_temp_all_images, blackbody_temp, 1)
 polynomial = np.poly1d(coefficients_avg_temp)
 print('1D polynomial for Avg Temp vs BB Temp:', polynomial)
 
+temp_grid = np.arange(15, 32.5, .1)
+temp_fit = np.polyval(coefficients_avg_temp, temp_grid)
+
 # Plot dataset and polynomial for average temp
-plt.figure()
+plt.figure('plot')
 plt.errorbar(
     blackbody_temp,
     avg_temp_all_images,
@@ -29,10 +32,10 @@ plt.errorbar(
     capsize = 5,        # little caps on bars
     label = 'Data'
 )
-plt.plot(blackbody_temp, polynomial(blackbody_temp))
 plt.title('Average Temperature of Full Series vs BB Temperature')
 plt.xlabel('Black Body Temperature (°C)')
 plt.ylabel('Average Temperature Recorded(°C)')
+plt.plot(temp_fit, temp_grid)
 plt.show()
 
 
